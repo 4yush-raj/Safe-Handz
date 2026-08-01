@@ -1,0 +1,105 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  ADMIN
+  AGENT
+  CUSTOMER
+}
+
+enum PolicyStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+  PENDING
+}
+
+enum ClaimStatus {
+  SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  OVERDUE
+  FAILED
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(CUSTOMER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  customerProfile Customer?
+}
+
+model Customer {
+  id        String   @id @default(uuid())
+  userId    String?  @unique
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  dob       DateTime
+  phone     String
+  address   String
+  email     String   @unique
+  createdAt DateTime @default(now())
+
+  policies  Policy[]
+  documents Document[]
+}
+
+model Policy {
+  id            String       @id @default(uuid())
+  customerId    String
+  customer      Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  policyType    String
+  policyNumber  String       @unique
+  premiumAmount Float
+  startDate     DateTime
+  endDate       DateTime
+  status        PolicyStatus @default(PENDING)
+  createdAt     DateTime     @default(now())
+
+  claims   Claim[]
+  payments PremiumPayment[]
+}
+
+model Claim {
+  id             String      @id @default(uuid())
+  policyId       String
+  policy         Policy      @relation(fields: [policyId], references: [id], onDelete: Cascade)
+  claimAmount    Float
+  reason         String
+  status         ClaimStatus @default(SUBMITTED)
+  submissionDate DateTime    @default(now())
+}
+
+model PremiumPayment {
+  id            String        @id @default(uuid())
+  policyId      String
+  policy        Policy        @relation(fields: [policyId], references: [id], onDelete: Cascade)
+  paymentDate   DateTime      @default(now())
+  amount        Float
+  paymentStatus PaymentStatus @default(PENDING)
+}
+
+model Document {
+  id         String   @id @default(uuid())
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  fileName   String
+  filePath   String
+  uploadedAt DateTime @default(now())
+}

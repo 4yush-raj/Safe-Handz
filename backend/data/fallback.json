@@ -1,0 +1,94 @@
+{
+  "users": [
+    {
+      "id": "fb_1785564729315",
+      "name": "Fallback User Y",
+      "email": "fallback_usery@example.com",
+      "password": "$2b$10$4t0kmHYG29.7UqeuphqlQ.nsr4s6FHAisHFbtC7K/khiJrttq8ZkO",
+      "role": "CUSTOMER",
+      "createdAt": "2026-08-01T06:12:09.315Z"
+    },
+    {
+      "id": "fb_1785565121330",
+      "name": "Ayush",
+      "email": "ayushrj2345@gmail.com",
+      "password": "$2b$10$eMyL9X3CIfsrpTuxbv2qDes.uErxEwDFlTOU/Hmfv7DkDfhSfrNKW",
+      "role": "ADMIN",
+      "createdAt": "2026-08-01T06:18:41.330Z"
+    },
+    {
+      "id": "fb_1785565285051",
+      "name": "Virat ",
+      "email": "virat18@gmail.com",
+      "password": "$2b$10$JxKGlV6zh9OrwLpLHzXjBOztHh./wD6v0vsc2yU3pA7qAqdLnoc3i",
+      "role": "CUSTOMER",
+      "createdAt": "2026-08-01T06:21:25.051Z"
+    },
+    {
+      "id": "fb_1785566950576",
+      "name": "Test User",
+      "email": "test.user+1@example.com",
+      "password": "$2b$10$bppdwx2l8H3fqRoowJJJvOqgmQicU/Ay0ahqMcmpnNvYaKKPjMvSO",
+      "role": "CUSTOMER",
+      "createdAt": "2026-08-01T06:49:10.576Z"
+    }
+  ],
+  "customers": [
+    {
+      "id": "cust_1785564729316",
+      "userId": "fb_1785564729315",
+      "name": "Fallback User Y",
+      "email": "fallback_usery@example.com",
+      "dob": "1990-01-01T00:00:00.000Z",
+      "phone": "0000000000",
+      "address": "Default Address",
+      "createdAt": "2026-08-01T06:12:09.317Z"
+    },
+    {
+      "id": "cust_1785565285051",
+      "userId": "fb_1785565285051",
+      "name": "Virat ",
+      "email": "virat18@gmail.com",
+      "dob": "1990-01-01T00:00:00.000Z",
+      "phone": "0000000000",
+      "address": "Default Address",
+      "createdAt": "2026-08-01T06:21:25.051Z"
+    },
+    {
+      "id": "cust_1785566950576",
+      "userId": "fb_1785566950576",
+      "name": "Test User",
+      "email": "test.user+1@example.com",
+      "dob": "1990-01-01T00:00:00.000Z",
+      "phone": "0000000000",
+      "address": "Default Address",
+      "createdAt": "2026-08-01T06:49:10.576Z"
+    }
+  ],
+  "policies": [
+    {
+      "id": "fb_policy_1785566952317",
+      "customerId": "cust_1785566950576",
+      "policyType": "Health",
+      "policyNumber": "PH-952317-292",
+      "premiumAmount": 250,
+      "startDate": "2026-08-01T00:00:00.000Z",
+      "endDate": "2027-08-01T00:00:00.000Z",
+      "status": "PENDING",
+      "createdAt": "2026-08-01T06:49:12.317Z"
+    },
+    {
+      "id": "fb_policy_1785567180446",
+      "customerId": "cust_1785566950576",
+      "policyType": "Auto",
+      "policyNumber": "PH-180446-215",
+      "premiumAmount": 320,
+      "startDate": "2026-08-01T00:00:00.000Z",
+      "endDate": "2027-08-01T00:00:00.000Z",
+      "status": "PENDING",
+      "createdAt": "2026-08-01T06:53:00.446Z"
+    }
+  ],
+  "claims": [],
+  "payments": []
+}

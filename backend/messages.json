@@ -1,0 +1,50 @@
+[
+  {
+    "id": "59b695bf-2fa4-42fb-8b2b-a8daec4f90c6",
+    "customerId": "d855126e-e1fd-43fd-adcf-282c040ae09a",
+    "senderId": "2989b13c-d5c0-4786-af6d-e1b71574f989",
+    "senderRole": "CUSTOMER",
+    "content": "Hello from validator",
+    "createdAt": "2026-07-23T20:13:08.663Z"
+  },
+  {
+    "id": "b623e578-e289-4464-8538-24f4010cbb0f",
+    "customerId": "c2a3698a-c912-485c-ac97-fbf1d36945c8",
+    "senderId": "3b67dc31-d32d-4b9b-95d8-3e0b2bcf5fee",
+    "senderRole": "CUSTOMER",
+    "content": "Hello I need an insurance",
+    "createdAt": "2026-07-23T20:15:07.086Z"
+  },
+  {
+    "id": "eb37ad3b-c37f-4f19-85b9-b5a01f87565f",
+    "customerId": "c2a3698a-c912-485c-ac97-fbf1d36945c8",
+    "senderId": "e7c1b1a5-8aba-4f9a-9ba3-e98c71dfa547",
+    "senderRole": "ADMIN",
+    "content": "OK it's now active you can check and will get approved soon!",
+    "createdAt": "2026-07-23T20:21:34.931Z"
+  },
+  {
+    "id": "594d50b2-bf73-4772-b2fa-63ba18957f51",
+    "customerId": "c2a3698a-c912-485c-ac97-fbf1d36945c8",
+    "senderId": "a0da156f-641a-4ffe-9c0e-b29d8f222d37",
+    "senderRole": "AGENT",
+    "content": "If you need any claims then we have beast options available just for you.",
+    "createdAt": "2026-07-23T20:24:43.661Z"
+  },
+  {
+    "id": "c0298fa0-31f4-45e1-be12-b658ad52e2cf",
+    "customerId": "1d6003da-560b-4e18-af36-c76463cd8d8c",
+    "senderId": "2cfd7f03-8780-46eb-9f2c-ff8c22fe7b23",
+    "senderRole": "CUSTOMER",
+    "content": "I need a policy for health.",
+    "createdAt": "2026-07-24T11:11:25.456Z"
+  },
+  {
+    "id": "b44493f4-f85d-467f-bc96-866cab7b99fc",
+    "customerId": "1d6003da-560b-4e18-af36-c76463cd8d8c",
+    "senderId": "a0da156f-641a-4ffe-9c0e-b29d8f222d37",
+    "senderRole": "AGENT",
+    "content": "Yes you can get , just a sec !",
+    "createdAt": "2026-07-24T11:17:56.662Z"
+  }
+]
