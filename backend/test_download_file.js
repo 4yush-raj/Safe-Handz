@@ -42,11 +42,9 @@ async function run() {
   const options = {
     hostname: 'localhost',
     port: 5000,
-    path: `/api/documents/${docId}/download`,
+    path: `/api/documents/${docId}/download?token=${token}`,
     method: 'GET',
-    headers: {
-      'Authorization': `Bearer ${token}`
-    }
+    headers: {}
   };
 
   const req = http.request(options, (res) => {

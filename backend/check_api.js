@@ -2,7 +2,7 @@ const http = require('http');
 
 const loginData = JSON.stringify({
   email: 'testcustomer@example.com',
-  password: 'password123'
+  password: 'Password123'
 });
 
 const req = http.request({

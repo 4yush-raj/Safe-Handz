@@ -1208,17 +1208,17 @@ const AdminDashboard = () => {
                       <button
                         onClick={async () => {
                           try {
-                            const blob = await api.downloadDocument(doc.id);
-                            const url = window.URL.createObjectURL(blob);
+                            const token = localStorage.getItem('token');
+                            const downloadUrl = api.downloadDocumentUrl(doc.id);
                             const link = document.createElement('a');
-                            link.href = url;
+                            link.href = `${downloadUrl}?token=${token}`;
                             link.download = doc.fileName;
+                            link.style.display = 'none';
                             document.body.appendChild(link);
                             link.click();
-                            link.remove();
                             setTimeout(() => {
-                              window.URL.revokeObjectURL(url);
-                            }, 60000);
+                              link.remove();
+                            }, 200);
                           } catch (err) {
                             setError(err.message || 'Unable to download document.');
                           }

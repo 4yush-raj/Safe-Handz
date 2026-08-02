@@ -155,7 +155,12 @@ function InsuranceDashboard({ userRole = 'ADMIN' }) {
     setLoading(true);
     setError('');
     try {
-      const response = await fetch(`/api/dashboard?role=${activeRole}`);
+      const token = localStorage.getItem('token');
+      const headers = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      const response = await fetch(`/api/dashboard?role=${activeRole}`, { headers });
       if (!response.ok) {
         throw new Error('Unable to load dashboard from the server.');
       }
@@ -177,6 +182,8 @@ function InsuranceDashboard({ userRole = 'ADMIN' }) {
       console.error('Failed to load customers:', err);
     }
   };
+
+
 
   useEffect(() => {
     setSelectedRole(currentUserRole);
@@ -381,18 +388,32 @@ function InsuranceDashboard({ userRole = 'ADMIN' }) {
               <div className="rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-600">Monthly</div>
             </div>
             <div className="mt-6 flex h-56 items-end gap-3">
-              {chartData.monthly.map((item) => (
-                <div key={item.month} className="flex flex-1 flex-col items-center gap-3">
-                  <div className="flex h-40 w-full items-end gap-2">
-                    <div className="flex-1 rounded-t-xl bg-slate-900" style={{ height: `${Math.max(item.premiums / 3, 12)}%` }}></div>
-                    <div className="flex-1 rounded-t-xl bg-indigo-500" style={{ height: `${Math.max(item.claims / 2.5, 12)}%` }}></div>
+              {(() => {
+                const maxChartVal = chartData?.monthly?.length > 0
+                  ? Math.max(...chartData.monthly.map(item => Math.max(item.premiums || 0, item.claims || 0)), 1)
+                  : 1;
+
+                return chartData.monthly.map((item) => (
+                  <div key={item.month} className="flex flex-1 flex-col items-center gap-3">
+                    <div className="flex h-40 w-full items-end gap-2">
+                      <div 
+                        className="flex-1 rounded-t-xl bg-slate-900 transition-all duration-300 hover:opacity-85" 
+                        style={{ height: `${Math.max(((item.premiums || 0) / maxChartVal) * 100, 12)}%` }}
+                        title={`Premiums: $${item.premiums}k`}
+                      ></div>
+                      <div 
+                        className="flex-1 rounded-t-xl bg-indigo-500 transition-all duration-300 hover:opacity-85" 
+                        style={{ height: `${Math.max(((item.claims || 0) / maxChartVal) * 100, 12)}%` }}
+                        title={`Claims: $${item.claims}k`}
+                      ></div>
+                    </div>
+                    <div className="text-center text-sm text-slate-600">
+                      <p className="font-semibold text-slate-900">{item.month}</p>
+                      <p>$ {item.premiums}k</p>
+                    </div>
                   </div>
-                  <div className="text-center text-sm text-slate-600">
-                    <p className="font-semibold text-slate-900">{item.month}</p>
-                    <p>$ {item.premiums}k</p>
-                  </div>
-                </div>
-              ))}
+                ));
+              })()}
             </div>
           </div>
 

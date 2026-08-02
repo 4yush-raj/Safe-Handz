@@ -4,9 +4,9 @@ const bcrypt = require('bcrypt');
 
 async function main() {
   await prisma.$connect();
-  
+
   const hashedGoku = await bcrypt.hash('password', 10);
-  const hashedTest = await bcrypt.hash('password123', 10);
+  const hashedTest = await bcrypt.hash('Password123', 10);
 
   await prisma.user.updateMany({
     where: { email: 'goko@gmail.com' },
@@ -15,6 +15,16 @@ async function main() {
 
   await prisma.user.updateMany({
     where: { email: 'testcustomer@example.com' },
+    data: { password: hashedTest }
+  });
+
+  await prisma.user.updateMany({
+    where: { email: 'testadmin@example.com' },
+    data: { password: hashedTest }
+  });
+
+  await prisma.user.updateMany({
+    where: { email: 'testagent@example.com' },
     data: { password: hashedTest }
   });
 

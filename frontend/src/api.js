@@ -132,6 +132,7 @@ export const api = {
   }),
 
   downloadDocumentUrl: (documentId) => `/api/documents/${documentId}/download`,
+  downloadPolicyCertificateUrl: (policyId) => `/api/policies/${policyId}/download`,
   downloadDocument: async (documentId) => await downloadBlob(`/documents/${documentId}/download`),
   
   // Profile

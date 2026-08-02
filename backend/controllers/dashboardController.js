@@ -1,4 +1,43 @@
 const prisma = require('../prismaClient');
+
+// Helper to format currency values cleanly (e.g. $2.84M, $45.2K, $820)
+const formatMoney = (amount) => {
+  if (!amount) return '$0';
+  if (amount >= 1000000) {
+    return `$${(amount / 1000000).toFixed(2)}M`;
+  }
+  if (amount >= 1000) {
+    return `$${(amount / 1000).toFixed(1)}K`;
+  }
+  return `$${amount.toFixed(0)}`;
+};
+
+// Helper to scale absolute values to thousands for the monthly charts
+const toThousands = (amount) => {
+  if (!amount) return 0;
+  const val = amount / 1000;
+  return val >= 1 ? Math.round(val) : parseFloat(val.toFixed(1));
+};
+
+// Helper to generate date ranges for the last 6 calendar months
+const getLast6Months = () => {
+  const months = [];
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const today = new Date();
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+    months.push({
+      name: monthNames[d.getMonth()],
+      year: d.getFullYear(),
+      monthNum: d.getMonth(),
+      startDate: new Date(d.getFullYear(), d.getMonth(), 1),
+      endDate: new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59, 999)
+    });
+  }
+  return months;
+};
+
+// Seed payload fallback configurations
 const buildDashboardPayload = (role) => {
   const normalizedRole = (role || 'ADMIN').toUpperCase();
 
@@ -147,45 +186,348 @@ const buildDashboardPayload = (role) => {
 exports.getDashboardData = async (req, res) => {
   try {
     const role = (req.query.role || req.user?.role || 'ADMIN').toUpperCase();
+    const payload = buildDashboardPayload(role);
 
     // Try to fetch real data from the database. If that fails, return the seeded payload.
     try {
-      // Aggregate counts
-      const [policiesCount, claimsCount, paymentsCount, usersCount] = await Promise.all([
-        prisma.policy.count(),
-        prisma.claim.count(),
-        prisma.premiumPayment.count(),
-        prisma.user.count(),
+      let customerId = null;
+
+      // If user requests CUSTOMER preview, resolve the customer scope
+      if (role === 'CUSTOMER') {
+        if (req.user) {
+          const customer = await prisma.customer.findUnique({
+            where: { userId: req.user.id }
+          });
+          if (customer) {
+            customerId = customer.id;
+          }
+        }
+
+        // Preview fallback: if the logged-in user isn't a CUSTOMER (e.g. Admin previewing)
+        // or has no profile yet, bind to the first customer in the DB so they see realistic data
+        if (!customerId) {
+          const firstCustomer = await prisma.customer.findFirst();
+          if (firstCustomer) {
+            customerId = firstCustomer.id;
+          }
+        }
+      }
+
+      // --- CALCULATE DYNAMIC METRICS ---
+      const now = new Date();
+      const thirtyDaysLater = new Date();
+      thirtyDaysLater.setDate(thirtyDaysLater.getDate() + 30);
+
+      const metricsCopy = payload.metrics.map(m => ({ ...m }));
+
+      if (role === 'ADMIN') {
+        // 1. Total Revenue (Sum of Completed Payments)
+        const paymentSum = await prisma.premiumPayment.aggregate({
+          where: { paymentStatus: 'COMPLETED' },
+          _sum: { amount: true }
+        });
+        metricsCopy[0].value = formatMoney(paymentSum._sum.amount || 0);
+
+        // 2. Active Policies
+        const activeCount = await prisma.policy.count({ where: { status: 'ACTIVE' } });
+        metricsCopy[1].value = activeCount >= 1000 ? `${(activeCount / 1000).toFixed(1)}K` : String(activeCount);
+
+        // 3. Claims Pending
+        const pendingClaimsCount = await prisma.claim.count({
+          where: { status: { in: ['SUBMITTED', 'UNDER_REVIEW'] } }
+        });
+        metricsCopy[2].value = String(pendingClaimsCount);
+
+        // 4. Customers Onboarded
+        const totalCustomers = await prisma.customer.count();
+        metricsCopy[3].value = totalCustomers.toLocaleString();
+
+      } else if (role === 'AGENT') {
+        // 1. Pending Verifications (Pending Claims + Pending Policies)
+        const pendingClaimsCount = await prisma.claim.count({
+          where: { status: { in: ['SUBMITTED', 'UNDER_REVIEW'] } }
+        });
+        const pendingPoliciesCount = await prisma.policy.count({
+          where: { status: 'PENDING' }
+        });
+        metricsCopy[0].value = String(pendingClaimsCount + pendingPoliciesCount);
+
+        // 2. Renewals Due (30d)
+        const renewalsCount = await prisma.policy.count({
+          where: {
+            status: 'ACTIVE',
+            endDate: { gte: now, lte: thirtyDaysLater }
+          }
+        });
+        metricsCopy[1].value = String(renewalsCount);
+
+        // 3. Policies Issued (Total Active Policies)
+        const activeCount = await prisma.policy.count({ where: { status: 'ACTIVE' } });
+        metricsCopy[2].value = String(activeCount);
+
+        // 4. Customer Satisfaction (Static standard metric)
+        // Keep standard seeded value
+
+      } else if (role === 'CUSTOMER') {
+        if (customerId) {
+          // 1. Active Policies
+          const activeCount = await prisma.policy.count({
+            where: { customerId, status: 'ACTIVE' }
+          });
+          metricsCopy[0].value = String(activeCount);
+
+          // 2. Coverage Amount (Sum of premiums for active policies)
+          const coverageSum = await prisma.policy.aggregate({
+            where: { customerId, status: 'ACTIVE' },
+            _sum: { premiumAmount: true }
+          });
+          metricsCopy[1].value = formatMoney(coverageSum._sum.premiumAmount || 0);
+
+          // 3. Upcoming Due Dates (Active policies ending in next 30 days)
+          const renewalsCount = await prisma.policy.count({
+            where: {
+              customerId,
+              status: 'ACTIVE',
+              endDate: { gte: now, lte: thirtyDaysLater }
+            }
+          });
+          metricsCopy[2].value = String(renewalsCount);
+
+          // 4. Claims in Progress
+          const claimsCount = await prisma.claim.count({
+            where: {
+              policy: { customerId },
+              status: { in: ['SUBMITTED', 'UNDER_REVIEW'] }
+            }
+          });
+          metricsCopy[3].value = String(claimsCount);
+        } else {
+          // Reset to zeros if no customers in DB
+          metricsCopy[0].value = '0';
+          metricsCopy[1].value = '$0';
+          metricsCopy[2].value = '0';
+          metricsCopy[3].value = '0';
+        }
+      }
+
+      payload.metrics = metricsCopy;
+
+      // --- CALCULATE PERFORMANCE OVERVIEW (MONTHLY GRAPH) ---
+      const months = getLast6Months();
+      const dynamicMonthly = await Promise.all(months.map(async (m) => {
+        // Sum completed premiums in the month
+        const premiumWhere = {
+          paymentStatus: 'COMPLETED',
+          paymentDate: { gte: m.startDate, lte: m.endDate }
+        };
+        if (role === 'CUSTOMER' && customerId) {
+          premiumWhere.policy = { customerId };
+        }
+        const premiumSum = await prisma.premiumPayment.aggregate({
+          where: premiumWhere,
+          _sum: { amount: true }
+        });
+
+        // Sum approved claims in the month
+        const claimWhere = {
+          status: 'APPROVED',
+          submissionDate: { gte: m.startDate, lte: m.endDate }
+        };
+        if (role === 'CUSTOMER' && customerId) {
+          claimWhere.policy = { customerId };
+        }
+        const claimSum = await prisma.claim.aggregate({
+          where: claimWhere,
+          _sum: { claimAmount: true }
+        });
+
+        return {
+          month: m.name,
+          premiums: toThousands(premiumSum._sum.amount || 0),
+          claims: toThousands(claimSum._sum.claimAmount || 0)
+        };
+      }));
+
+      // Use dynamic data if there's any transaction history, otherwise fall back to seeded values
+      const hasGraphData = dynamicMonthly.some(d => d.premiums > 0 || d.claims > 0);
+      if (hasGraphData) {
+        payload.chartData.monthly = dynamicMonthly;
+      }
+
+      // --- CALCULATE POLICY DISTRIBUTION (COVER TYPES DONUT GRAPH) ---
+      const distWhere = { status: 'ACTIVE' };
+      if (role === 'CUSTOMER' && customerId) {
+        distWhere.customerId = customerId;
+      }
+
+      const activePolicies = await prisma.policy.findMany({
+        where: distWhere,
+        select: { policyType: true }
+      });
+
+      const counts = { Health: 0, Auto: 0, Life: 0, Property: 0 };
+      activePolicies.forEach(p => {
+        const typeNormalized = p.policyType.charAt(0).toUpperCase() + p.policyType.slice(1).toLowerCase();
+        if (counts.hasOwnProperty(typeNormalized)) {
+          counts[typeNormalized]++;
+        }
+      });
+
+      const totalActive = activePolicies.length;
+      const dynamicDistribution = [
+        { label: 'Health', value: totalActive > 0 ? Math.round((counts.Health / totalActive) * 100) : 0, color: '#2563eb' },
+        { label: 'Auto', value: totalActive > 0 ? Math.round((counts.Auto / totalActive) * 100) : 0, color: '#7c3aed' },
+        { label: 'Life', value: totalActive > 0 ? Math.round((counts.Life / totalActive) * 100) : 0, color: '#0f766e' },
+        { label: 'Property', value: totalActive > 0 ? Math.round((counts.Property / totalActive) * 100) : 0, color: '#f59e0b' }
+      ];
+
+      const hasDistData = dynamicDistribution.some(d => d.value > 0);
+      if (hasDistData) {
+        payload.chartData.distribution = dynamicDistribution;
+      }
+
+      // --- DYNAMIC RECENT ACTIVITY FEED ---
+      const claimQuery = { take: 5, orderBy: { submissionDate: 'desc' }, include: { policy: { include: { customer: true } } } };
+      const policyQuery = { take: 5, orderBy: { createdAt: 'desc' }, include: { customer: true } };
+      const paymentQuery = { take: 5, orderBy: { paymentDate: 'desc' }, include: { policy: { include: { customer: true } } } };
+
+      if (role === 'CUSTOMER' && customerId) {
+        claimQuery.where = { policy: { customerId } };
+        policyQuery.where = { customerId };
+        paymentQuery.where = { policy: { customerId } };
+      }
+
+      const [recentClaims, recentPolicies, recentPayments] = await Promise.all([
+        prisma.claim.findMany(claimQuery),
+        prisma.policy.findMany(policyQuery),
+        prisma.premiumPayment.findMany(paymentQuery)
       ]);
 
-      // Recent activity: latest claims and policies
-      const recentClaims = await prisma.claim.findMany({ take: 5, orderBy: { submissionDate: 'desc' }, include: { policy: { include: { customer: true } } } });
-      const recentPolicies = await prisma.policy.findMany({ take: 5, orderBy: { createdAt: 'desc' }, include: { customer: true } });
-      const recentPayments = await prisma.premiumPayment.findMany({ take: 5, orderBy: { paymentDate: 'desc' }, include: { policy: { include: { customer: true } } } });
-
-      // Build metrics using DB values
-      const payload = buildDashboardPayload(role);
-      payload.metrics = payload.metrics.map((m) => ({ ...m }));
-      // Overwrite a few metrics with real counts where sensible
-      if (payload.metrics[0]) payload.metrics[0].value = `${policiesCount ? policiesCount : payload.metrics[0].value}`;
-      if (payload.metrics[1]) payload.metrics[1].value = `${paymentsCount ? paymentsCount : payload.metrics[1].value}`;
-      if (payload.metrics[2]) payload.metrics[2].value = `${claimsCount ? claimsCount : payload.metrics[2].value}`;
-
-      // Activity rows combined
       const activityRows = [];
-      recentPolicies.forEach((p) => activityRows.push({ id: p.policyNumber || p.id, name: p.customer?.name || 'Unknown', category: 'Policy', date: p.createdAt?.toISOString().split('T')[0], amount: `$${p.premiumAmount || 0}`, status: p.status }));
-      recentClaims.forEach((c) => activityRows.push({ id: c.id, name: c.policy?.customer?.name || 'Unknown', category: 'Claim', date: c.submissionDate?.toISOString().split('T')[0], amount: `$${c.claimAmount || 0}`, status: c.status }));
-      recentPayments.forEach((pay) => activityRows.push({ id: pay.id, name: pay.policy?.customer?.name || 'Unknown', category: 'Payment', date: pay.paymentDate?.toISOString().split('T')[0], amount: `$${pay.amount || 0}`, status: pay.paymentStatus }));
+      recentPolicies.forEach((p) => {
+        activityRows.push({
+          id: p.policyNumber || p.id,
+          name: p.customer?.name || 'Unknown',
+          category: 'Policy',
+          date: p.createdAt?.toISOString().split('T')[0],
+          amount: `$${p.premiumAmount.toLocaleString()}`,
+          status: p.status === 'ACTIVE' ? 'Active' : p.status === 'PENDING' ? 'Pending' : p.status === 'EXPIRED' ? 'Expired' : 'Cancelled'
+        });
+      });
 
+      recentClaims.forEach((c) => {
+        const statusMap = {
+          SUBMITTED: 'Pending',
+          UNDER_REVIEW: 'Under Review',
+          APPROVED: 'Approved',
+          REJECTED: 'Rejected'
+        };
+        activityRows.push({
+          id: `CLM-${c.id.slice(0,4).toUpperCase()}`,
+          name: c.policy?.customer?.name || 'Unknown',
+          category: 'Claim',
+          date: c.submissionDate?.toISOString().split('T')[0],
+          amount: `$${c.claimAmount.toLocaleString()}`,
+          status: statusMap[c.status] || 'Pending'
+        });
+      });
+
+      recentPayments.forEach((pay) => {
+        activityRows.push({
+          id: `PAY-${pay.id.slice(0,4).toUpperCase()}`,
+          name: pay.policy?.customer?.name || 'Unknown',
+          category: 'Payment',
+          date: pay.paymentDate?.toISOString().split('T')[0],
+          amount: `$${pay.amount.toLocaleString()}`,
+          status: pay.paymentStatus === 'COMPLETED' ? 'Approved' : pay.paymentStatus === 'PENDING' ? 'Pending' : 'Rejected'
+        });
+      });
+
+      // Sort combined activity feed by date desc
+      activityRows.sort((a, b) => new Date(b.date) - new Date(a.date));
       payload.activityRows = activityRows.slice(0, 10);
-      payload.auditLogs = payload.auditLogs || [];
-      payload.pendingClaims = payload.pendingClaims || [];
-      payload.renewals = payload.renewals || [];
+
+      // --- SIDEBAR DATA (PENDING CLAIMS QUEUE & RENEWALS) ---
+      if (role === 'ADMIN' || role === 'AGENT') {
+        // Pending Claims Priority Queue
+        const pendingClaimsList = await prisma.claim.findMany({
+          where: { status: { in: ['SUBMITTED', 'UNDER_REVIEW'] } },
+          include: { policy: { include: { customer: true } } },
+          orderBy: { submissionDate: 'asc' },
+          take: 5
+        });
+
+        payload.pendingClaims = pendingClaimsList.map(c => ({
+          title: c.reason || 'Insurance Claim',
+          customer: c.policy?.customer?.name || 'Unknown',
+          priority: c.claimAmount >= 5000 ? 'High' : 'Medium'
+        }));
+
+        // Renewals List
+        const renewalsList = await prisma.policy.findMany({
+          where: {
+            status: 'ACTIVE',
+            endDate: { gte: now, lte: thirtyDaysLater }
+          },
+          include: { customer: true },
+          orderBy: { endDate: 'asc' },
+          take: 5
+        });
+
+        payload.renewals = renewalsList.map(p => {
+          const diffTime = Math.abs(p.endDate - now);
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          return {
+            customer: p.customer?.name || 'Unknown',
+            policy: `${p.policyType} Cover`,
+            days: `${diffDays} days`
+          };
+        });
+      } else if (role === 'CUSTOMER' && customerId) {
+        // Customer active claim progress
+        const activeClaim = await prisma.claim.findFirst({
+          where: {
+            policy: { customerId },
+            status: { in: ['SUBMITTED', 'UNDER_REVIEW', 'APPROVED'] }
+          },
+          orderBy: { submissionDate: 'desc' }
+        });
+
+        if (activeClaim) {
+          payload.pendingClaims = [{
+            title: `Claim #CLM-${activeClaim.id.slice(0,4).toUpperCase()}`,
+            customer: 'You',
+            priority: activeClaim.status === 'SUBMITTED' ? 'Medium' : 'High'
+          }];
+        } else {
+          payload.pendingClaims = [];
+        }
+
+        // Customer upcoming renewals
+        const customerRenewals = await prisma.policy.findMany({
+          where: {
+            customerId,
+            status: 'ACTIVE',
+            endDate: { gte: now, lte: thirtyDaysLater }
+          },
+          orderBy: { endDate: 'asc' },
+          take: 3
+        });
+
+        payload.renewals = customerRenewals.map(p => {
+          const diffTime = Math.abs(p.endDate - now);
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          return {
+            customer: 'You',
+            policy: `${p.policyType} Cover`,
+            days: `${diffDays} days`
+          };
+        });
+      }
 
       return res.status(200).json(payload);
     } catch (dbError) {
       console.warn('Dashboard DB query failed, returning seeded payload:', dbError.message);
-      const payload = buildDashboardPayload(role);
       return res.status(200).json(payload);
     }
   } catch (error) {
