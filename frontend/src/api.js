@@ -68,9 +68,9 @@ export const api = {
     body: { email, password }
   }),
   
-  register: (name, email, password, role) => request('/auth/register', {
+  register: (name, email, password, role, dob, phone, address) => request('/auth/register', {
     method: 'POST',
-    body: { name, email, password, role }
+    body: { name, email, password, role, dob, phone, address }
   }),
 
   // Policies
@@ -124,6 +124,7 @@ export const api = {
 
   // Documents
   getDocuments: () => request('/documents/customer'),
+  getCustomerDocuments: (customerId) => request(`/documents/customer/${customerId}`),
   
   uploadDocument: (formData) => request('/documents/upload', {
     method: 'POST',
@@ -131,4 +132,15 @@ export const api = {
   }),
 
   downloadDocumentUrl: (documentId) => `/api/documents/${documentId}/download`,
+  downloadDocument: async (documentId) => await downloadBlob(`/documents/${documentId}/download`),
+  
+  // Profile
+  getProfile: () => request('/profile'),
+  getCustomers: () => request('/profile/all'),
+  getAgents: () => request('/profile/agents'),
+  updateProfile: (profileData) => request('/profile', {
+    method: 'PUT',
+    body: profileData
+  }),
 };
+

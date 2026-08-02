@@ -10,6 +10,7 @@ const claimRoutes = require('./routes/claimRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const messageRoutes = require('./routes/messageRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
+const profileRoutes = require('./routes/profileRoutes');
 
 const app = express();
 
@@ -28,6 +29,7 @@ app.use('/api/claims', claimRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/profile', profileRoutes);
 
 // Health Check
 app.get('/', (req, res) => {

@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { api } from '../api';
 import {
   AlertTriangle,
-  Bell,
   BriefcaseBusiness,
   Building2,
   CheckCircle2,
@@ -14,7 +15,6 @@ import {
   FileText,
   HeartPulse,
   House,
-  Search,
   ShieldCheck,
   Sparkles,
   TrendingUp,
@@ -114,47 +114,139 @@ const iconMap = {
 };
 
 function InsuranceDashboard({ userRole = 'ADMIN' }) {
-  const [selectedRole, setSelectedRole] = useState(userRole.toUpperCase());
+  const { user } = useAuth();
+  const currentUserRole = (user?.role || userRole).toUpperCase();
+
+  const [selectedRole, setSelectedRole] = useState(currentUserRole);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('All');
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  const [showRegisterModal, setShowRegisterModal] = useState(false);
+  const [showIssuePolicyModal, setShowIssuePolicyModal] = useState(false);
+  const [customersList, setCustomersList] = useState([]);
+  const [modalError, setModalError] = useState('');
+  const [modalSuccess, setModalSuccess] = useState('');
+
+  const [registerForm, setRegisterForm] = useState({
+    name: '',
+    email: '',
+    password: '',
+    dob: '',
+    phone: '',
+    address: ''
+  });
+
+  const [policyForm, setPolicyForm] = useState({
+    customerId: '',
+    policyType: 'Health',
+    policyNumber: '',
+    premiumAmount: '',
+    startDate: '',
+    endDate: ''
+  });
+
   const activeRole = roleOptions.includes(selectedRole) ? selectedRole : 'ADMIN';
   const navigate = useNavigate();
 
-  useEffect(() => {
-    let isMounted = true;
-    const loadDashboard = async () => {
-      setLoading(true);
-      setError('');
-      try {
-        const response = await fetch(`/api/dashboard?role=${activeRole}`);
-        if (!response.ok) {
-          throw new Error('Unable to load dashboard from the server.');
-        }
-        const data = await response.json();
-        if (isMounted) {
-          setDashboardData(data);
-        }
-      } catch (err) {
-        if (isMounted) {
-          setError(err.message || 'Unable to load dashboard data.');
-          setDashboardData(null);
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
+  const loadDashboard = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const response = await fetch(`/api/dashboard?role=${activeRole}`);
+      if (!response.ok) {
+        throw new Error('Unable to load dashboard from the server.');
       }
-    };
+      const data = await response.json();
+      setDashboardData(data);
+    } catch (err) {
+      setError(err.message || 'Unable to load dashboard data.');
+      setDashboardData(null);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  const fetchCustomers = async () => {
+    try {
+      const data = await api.getCustomers();
+      setCustomersList(data || []);
+    } catch (err) {
+      console.error('Failed to load customers:', err);
+    }
+  };
+
+  useEffect(() => {
+    setSelectedRole(currentUserRole);
+  }, [currentUserRole]);
+
+  useEffect(() => {
     loadDashboard();
-    return () => {
-      isMounted = false;
-    };
+    if (activeRole === 'AGENT' || activeRole === 'ADMIN') {
+      fetchCustomers();
+    }
   }, [activeRole]);
+
+  const handleRegisterCustomer = async (e) => {
+    e.preventDefault();
+    setModalError('');
+    setModalSuccess('');
+    try {
+      if (!registerForm.name || !registerForm.email || !registerForm.password) {
+        setModalError('Name, Email and Password are required.');
+        return;
+      }
+      await api.register(
+        registerForm.name,
+        registerForm.email,
+        registerForm.password,
+        'CUSTOMER',
+        registerForm.dob,
+        registerForm.phone,
+        registerForm.address
+      );
+      setModalSuccess('Customer registered successfully!');
+      setRegisterForm({ name: '', email: '', password: '', dob: '', phone: '', address: '' });
+      fetchCustomers();
+      loadDashboard();
+    } catch (err) {
+      setModalError(err.message || 'Registration failed.');
+    }
+  };
+
+  const handleIssuePolicy = async (e) => {
+    e.preventDefault();
+    setModalError('');
+    setModalSuccess('');
+    try {
+      if (!policyForm.customerId || !policyForm.policyNumber || !policyForm.premiumAmount || !policyForm.startDate || !policyForm.endDate) {
+        setModalError('All fields are required to issue a policy.');
+        return;
+      }
+      await api.createPolicy({
+        customerId: policyForm.customerId,
+        policyType: policyForm.policyType,
+        policyNumber: policyForm.policyNumber,
+        premiumAmount: parseFloat(policyForm.premiumAmount),
+        startDate: policyForm.startDate,
+        endDate: policyForm.endDate
+      });
+      setModalSuccess('Policy issued successfully!');
+      setPolicyForm({
+        customerId: '',
+        policyType: 'Health',
+        policyNumber: '',
+        premiumAmount: '',
+        startDate: '',
+        endDate: ''
+      });
+      loadDashboard();
+    } catch (err) {
+      setModalError(err.message || 'Failed to issue policy.');
+    }
+  };
 
   const metrics = useMemo(() => {
     const source = dashboardData?.metrics?.length ? dashboardData.metrics : null;
@@ -206,43 +298,30 @@ function InsuranceDashboard({ userRole = 'ADMIN' }) {
   return (
     <div className="min-h-screen bg-[#F8FAFC] px-4 py-6 text-slate-900 sm:px-6 lg:px-8">
       <div className="mx-auto flex max-w-7xl flex-col gap-6">
-        <header className="rounded-[28px] border border-slate-200 bg-white/80 p-4 shadow-[0_18px_50px_-24px_rgba(15,23,42,0.35)] backdrop-blur sm:p-6">
+        <header className="rounded-[28px] border border-slate-800 bg-slate-900 p-4 shadow-xl text-white sm:p-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-500">Insurance Operations Suite</p>
-              <h1 className="mt-2 text-2xl font-semibold text-slate-900 sm:text-3xl">{roleTitle}</h1>
-              <p className="mt-2 max-w-2xl text-sm text-slate-600 sm:text-base">
+              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-indigo-400">Insurance Operations Suite</p>
+              <h1 className="mt-2 text-2xl font-bold text-white sm:text-3xl">{roleTitle}</h1>
+              <p className="mt-2 max-w-2xl text-sm text-slate-400 sm:text-base">
                 A responsive, enterprise-grade dashboard for policy oversight, claims execution, and client engagement.
               </p>
             </div>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
-                <Search size={16} />
-                <input
-                  value={search}
-                  onChange={(event) => setSearch(event.target.value)}
-                  placeholder="Search records"
-                  className="w-32 bg-transparent outline-none sm:w-40"
-                />
-              </div>
-              <button className="relative flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-700 transition hover:bg-slate-100">
-                <Bell size={18} />
-                <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-rose-500"></span>
-              </button>
-              <div className="flex items-center gap-3 rounded-full border border-slate-200 bg-slate-50 px-3 py-2">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-900 text-white">
+              <div className="flex items-center gap-3 rounded-full border border-slate-800 bg-slate-950 px-3 py-2">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-900 text-indigo-200 border border-slate-850">
                   <User2 size={18} />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-slate-900">Alicia Reed</p>
-                  <span className="inline-flex rounded-full bg-indigo-100 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-indigo-700">
+                  <p className="text-sm font-bold text-slate-200">{user?.name || 'Alicia Reed'}</p>
+                  <span className="inline-flex rounded-full bg-indigo-500/10 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide text-indigo-400 border border-indigo-500/15">
                     {activeRole}
                   </span>
                 </div>
               </div>
               <button
                 onClick={() => navigate(-1)}
-                className="ml-2 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                className="ml-2 inline-flex items-center gap-2 rounded-full border border-slate-800 bg-slate-950 hover:bg-slate-900 px-4 py-2 text-sm text-slate-300 hover:text-white transition-colors cursor-pointer"
                 title="Go back"
               >
                 ← Back
@@ -252,19 +331,21 @@ function InsuranceDashboard({ userRole = 'ADMIN' }) {
         </header>
 
         <div className="flex flex-wrap gap-2">
-          {roleOptions.map((role) => (
-            <button
-              key={role}
-              onClick={() => setSelectedRole(role)}
-              className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                selectedRole === role
-                  ? 'bg-slate-900 text-white shadow-lg shadow-slate-300'
-                  : 'bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50'
-              }`}
-            >
-              {role === 'ADMIN' ? 'Admin Preview' : role === 'AGENT' ? 'Agent Preview' : 'Customer Preview'}
-            </button>
-          ))}
+          {roleOptions
+            .filter((role) => role === currentUserRole)
+            .map((role) => (
+              <button
+                key={role}
+                onClick={() => setSelectedRole(role)}
+                className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                  selectedRole === role
+                    ? 'bg-slate-900 text-white shadow-lg shadow-slate-300'
+                    : 'bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50'
+                }`}
+              >
+                {role === 'ADMIN' ? 'Admin Preview' : role === 'AGENT' ? 'Agent Preview' : 'Customer Preview'}
+              </button>
+            ))}
         </div>
 
         <section className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -448,8 +529,18 @@ function InsuranceDashboard({ userRole = 'ADMIN' }) {
                   ))}
                 </div>
                 <div className="mt-5 flex flex-wrap gap-2">
-                  <button className="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white">Register Customer</button>
-                  <button className="rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white">Issue Policy</button>
+                  <button 
+                    onClick={() => { setShowRegisterModal(true); setModalError(''); setModalSuccess(''); }}
+                    className="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 transition"
+                  >
+                    Register Customer
+                  </button>
+                  <button 
+                    onClick={() => { setShowIssuePolicyModal(true); setModalError(''); setModalSuccess(''); }}
+                    className="rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 transition"
+                  >
+                    Issue Policy
+                  </button>
                 </div>
               </div>
             )}
@@ -479,38 +570,220 @@ function InsuranceDashboard({ userRole = 'ADMIN' }) {
                       );
                     })}
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    <button className="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white">Pay Premium</button>
-                    <button className="rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white">Upload Document</button>
-                    <button className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white">Download PDF</button>
-                  </div>
+
                 </div>
               </div>
             )}
 
-            <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-slate-500">Upcoming Focus</p>
-                  <h2 className="mt-1 text-xl font-semibold text-slate-900">Renewal alerts</h2>
-                </div>
-                <span className="rounded-full bg-rose-100 px-2.5 py-1 text-sm font-semibold text-rose-700">30 days</span>
-              </div>
-              <div className="mt-4 space-y-3">
-                {renewalItems.map((item) => (
-                  <div key={`${item.customer}-${item.policy || ''}`} className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 p-3">
-                    <div>
-                      <p className="font-semibold text-slate-900">{item.customer}</p>
-                      <p className="text-sm text-slate-600">{item.policy}</p>
-                    </div>
-                    <span className="text-sm font-semibold text-slate-700">{item.days}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
+
           </div>
         </section>
       </div>
+
+      {/* Modal: Register Customer */}
+      {showRegisterModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fade-in">
+          <div className="relative w-full max-w-lg rounded-[28px] border border-slate-200 bg-white/95 p-6 shadow-2xl backdrop-blur-md animate-scale-in text-left">
+            <h3 className="text-xl font-semibold text-slate-900">Register New Customer</h3>
+            <p className="text-sm text-slate-600 mt-1">Create a user account and customer profile for a new client.</p>
+            
+            {modalError && <div className="mt-4 rounded-2xl bg-rose-50 border border-rose-200 p-3 text-xs font-semibold text-rose-700">{modalError}</div>}
+            {modalSuccess && <div className="mt-4 rounded-2xl bg-emerald-50 border border-emerald-200 p-3 text-xs font-semibold text-emerald-700">{modalSuccess}</div>}
+            
+            <form onSubmit={handleRegisterCustomer} className="mt-4 space-y-3">
+              <div>
+                <label className="text-xs font-semibold text-slate-600">Full Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={registerForm.name}
+                  onChange={(e) => setRegisterForm({ ...registerForm, name: e.target.value })}
+                  placeholder="John Doe"
+                  className="mt-1 w-full rounded-2xl border border-slate-250 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-slate-900"
+                />
+              </div>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="text-xs font-semibold text-slate-600">Email Address *</label>
+                  <input
+                    type="email"
+                    required
+                    value={registerForm.email}
+                    onChange={(e) => setRegisterForm({ ...registerForm, email: e.target.value })}
+                    placeholder="john@example.com"
+                    className="mt-1 w-full rounded-2xl border border-slate-250 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-slate-900"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-600">Password *</label>
+                  <input
+                    type="password"
+                    required
+                    value={registerForm.password}
+                    onChange={(e) => setRegisterForm({ ...registerForm, password: e.target.value })}
+                    placeholder="••••••••"
+                    className="mt-1 w-full rounded-2xl border border-slate-250 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-slate-900"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="text-xs font-semibold text-slate-600">Date of Birth</label>
+                  <input
+                    type="date"
+                    value={registerForm.dob}
+                    onChange={(e) => setRegisterForm({ ...registerForm, dob: e.target.value })}
+                    className="mt-1 w-full rounded-2xl border border-slate-250 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-slate-900"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-600">Phone Number</label>
+                  <input
+                    type="tel"
+                    value={registerForm.phone}
+                    onChange={(e) => setRegisterForm({ ...registerForm, phone: e.target.value })}
+                    placeholder="000-000-0000"
+                    className="mt-1 w-full rounded-2xl border border-slate-250 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-slate-900"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-600">Home Address</label>
+                <textarea
+                  value={registerForm.address}
+                  onChange={(e) => setRegisterForm({ ...registerForm, address: e.target.value })}
+                  placeholder="Street name, City, Zip"
+                  rows={2}
+                  className="mt-1 w-full rounded-2xl border border-slate-250 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-slate-900 resize-none"
+                />
+              </div>
+              <div className="mt-6 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowRegisterModal(false)}
+                  className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+                >
+                  Register
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Issue Policy */}
+      {showIssuePolicyModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fade-in">
+          <div className="relative w-full max-w-lg rounded-[28px] border border-slate-200 bg-white/95 p-6 shadow-2xl backdrop-blur-md animate-scale-in text-left">
+            <h3 className="text-xl font-semibold text-slate-900">Issue Insurance Policy</h3>
+            <p className="text-sm text-slate-600 mt-1">Configure and issue a new insurance coverage policy for a registered customer.</p>
+            
+            {modalError && <div className="mt-4 rounded-2xl bg-rose-50 border border-rose-200 p-3 text-xs font-semibold text-rose-700">{modalError}</div>}
+            {modalSuccess && <div className="mt-4 rounded-2xl bg-emerald-50 border border-emerald-200 p-3 text-xs font-semibold text-emerald-700">{modalSuccess}</div>}
+            
+            <form onSubmit={handleIssuePolicy} className="mt-4 space-y-3">
+              <div>
+                <label className="text-xs font-semibold text-slate-600">Select Customer *</label>
+                <select
+                  required
+                  value={policyForm.customerId}
+                  onChange={(e) => setPolicyForm({ ...policyForm, customerId: e.target.value })}
+                  className="mt-1 w-full rounded-2xl border border-slate-250 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-slate-900"
+                >
+                  <option value="">-- Choose Customer --</option>
+                  {customersList.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name} ({c.email})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="text-xs font-semibold text-slate-600">Policy Type *</label>
+                  <select
+                    required
+                    value={policyForm.policyType}
+                    onChange={(e) => setPolicyForm({ ...policyForm, policyType: e.target.value })}
+                    className="mt-1 w-full rounded-2xl border border-slate-250 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-slate-900"
+                  >
+                    <option value="Health">Health</option>
+                    <option value="Auto">Auto</option>
+                    <option value="Life">Life</option>
+                    <option value="Property">Property</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-600">Policy Number *</label>
+                  <input
+                    type="text"
+                    required
+                    value={policyForm.policyNumber}
+                    onChange={(e) => setPolicyForm({ ...policyForm, policyNumber: e.target.value })}
+                    placeholder="POL-XXXXX"
+                    className="mt-1 w-full rounded-2xl border border-slate-250 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-slate-900"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-600">Premium Amount ($) *</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  required
+                  value={policyForm.premiumAmount}
+                  onChange={(e) => setPolicyForm({ ...policyForm, premiumAmount: e.target.value })}
+                  placeholder="1200.00"
+                  className="mt-1 w-full rounded-2xl border border-slate-250 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-slate-900"
+                />
+              </div>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="text-xs font-semibold text-slate-600">Start Date *</label>
+                  <input
+                    type="date"
+                    required
+                    value={policyForm.startDate}
+                    onChange={(e) => setPolicyForm({ ...policyForm, startDate: e.target.value })}
+                    className="mt-1 w-full rounded-2xl border border-slate-250 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-slate-900"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-600">End Date *</label>
+                  <input
+                    type="date"
+                    required
+                    value={policyForm.endDate}
+                    onChange={(e) => setPolicyForm({ ...policyForm, endDate: e.target.value })}
+                    className="mt-1 w-full rounded-2xl border border-slate-250 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-slate-900"
+                  />
+                </div>
+              </div>
+              <div className="mt-6 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowIssuePolicyModal(false)}
+                  className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500"
+                >
+                  Issue Policy
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

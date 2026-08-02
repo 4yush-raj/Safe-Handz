@@ -46,7 +46,14 @@ function getFallbackPoliciesForCustomer(customerId) {
 }
 
 function getAllFallbackPolicies() {
-  return loadFallbackStore().policies;
+  const store = loadFallbackStore();
+  return store.policies.map(policy => {
+    const customer = store.customers.find((c) => c.id === policy.customerId);
+    return {
+      ...policy,
+      customer
+    };
+  });
 }
 
 function createFallbackPolicy(customerId, policyData) {

@@ -44,7 +44,14 @@ exports.register = async (req, res) => {
 
         if (user.role === 'CUSTOMER') {
           await prisma.customer.create({
-            data: { userId: user.id, name: user.name, email: user.email, dob: new Date('1990-01-01'), phone: '0000000000', address: 'Default Address' }
+            data: {
+              userId: user.id,
+              name: user.name,
+              email: user.email,
+              dob: req.body.dob ? new Date(req.body.dob) : new Date('1990-01-01'),
+              phone: req.body.phone || '0000000000',
+              address: req.body.address || 'Default Address'
+            }
           });
         }
 
@@ -67,7 +74,16 @@ exports.register = async (req, res) => {
     store.users.push(newUser);
 
     if (newUser.role === 'CUSTOMER') {
-      const customer = { id: `cust_${Date.now()}`, userId: id, name, email, dob: new Date('1990-01-01').toISOString(), phone: '0000000000', address: 'Default Address', createdAt: new Date().toISOString() };
+      const customer = {
+        id: `cust_${Date.now()}`,
+        userId: id,
+        name,
+        email,
+        dob: req.body.dob ? new Date(req.body.dob).toISOString() : new Date('1990-01-01').toISOString(),
+        phone: req.body.phone || '0000000000',
+        address: req.body.address || 'Default Address',
+        createdAt: new Date().toISOString()
+      };
       store.customers.push(customer);
     }
 

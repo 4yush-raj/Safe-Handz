@@ -46,5 +46,45 @@
     "senderRole": "AGENT",
     "content": "Yes you can get , just a sec !",
     "createdAt": "2026-07-24T11:17:56.662Z"
+  },
+  {
+    "id": "4a83da0b-9713-46d2-9293-7ebbb4d93c63",
+    "customerId": "962f9de6-504d-41b2-9bcf-c13dbb6211ad",
+    "senderId": "8bf757bc-8e0b-4d36-acbd-9ad340ddce02",
+    "senderRole": "CUSTOMER",
+    "content": "I need a policy",
+    "createdAt": "2026-08-01T12:15:19.384Z"
+  },
+  {
+    "id": "1da05ab8-5bc9-4d94-b2fb-a43be47cb9e3",
+    "customerId": "cust_1785593739705",
+    "senderId": "fb_1785593739705",
+    "senderRole": "CUSTOMER",
+    "content": "Hello",
+    "createdAt": "2026-08-01T14:26:46.722Z"
+  },
+  {
+    "id": "de567e2f-8908-4b0e-a414-596491e468bd",
+    "customerId": "cust_1785593739705",
+    "senderId": "fb_1785593739705",
+    "senderRole": "CUSTOMER",
+    "content": "I need one more policy for health",
+    "createdAt": "2026-08-01T14:33:50.052Z"
+  },
+  {
+    "id": "f39d98c6-4ca2-4784-a3ba-996d63b29b5d",
+    "customerId": "cust_1785593739705",
+    "senderId": "fb_1785593934337",
+    "senderRole": "AGENT",
+    "content": "I will look for it soon",
+    "createdAt": "2026-08-01T14:34:56.797Z"
+  },
+  {
+    "id": "4db7e47e-9c7a-4f32-84f2-f53ede29f831",
+    "customerId": "616f477f-01b0-4920-9778-00af12bfb002",
+    "senderId": "355cd8b8-153f-469e-9961-c51dcb29885e",
+    "senderRole": "AGENT",
+    "content": "I'll approve it but payment is to be done by today night atleast 10%.",
+    "createdAt": "2026-08-02T12:32:20.741Z"
   }
 ]

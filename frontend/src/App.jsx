@@ -20,7 +20,10 @@ const ProtectedRoute = ({ children }) => {
   }
   
   if (!user) {
-    return <Navigate to="/auth" replace />;
+    const lastPortal = localStorage.getItem('lastPortal');
+    const validPortals = ['client', 'agent', 'admin'];
+    const targetPortal = lastPortal && validPortals.includes(lastPortal) ? lastPortal : 'client';
+    return <Navigate to={`/login/${targetPortal}`} replace />;
   }
   
   return children;
@@ -31,7 +34,10 @@ const DashboardSelector = () => {
   const { user } = useAuth();
 
   if (!user) {
-    return <Navigate to="/auth" replace />;
+    const lastPortal = localStorage.getItem('lastPortal');
+    const validPortals = ['client', 'agent', 'admin'];
+    const targetPortal = lastPortal && validPortals.includes(lastPortal) ? lastPortal : 'client';
+    return <Navigate to={`/login/${targetPortal}`} replace />;
   }
 
   if (user.role === 'ADMIN' || user.role === 'AGENT') {
@@ -46,8 +52,11 @@ function App() {
     <AuthProvider>
       <Router>
         <Routes>
-          {/* Public Auth Page */}
-          <Route path="/auth" element={<Auth />} />
+          {/* Public Auth Pages */}
+          <Route path="/auth" element={<Navigate to="/login/client" replace />} />
+          <Route path="/login" element={<Navigate to="/login/client" replace />} />
+          <Route path="/login/customer" element={<Navigate to="/login/client" replace />} />
+          <Route path="/login/:portalRole" element={<Auth />} />
           
           {/* Protected Main App Dashboard */}
           <Route 

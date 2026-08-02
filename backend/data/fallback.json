@@ -12,7 +12,7 @@
       "id": "fb_1785565121330",
       "name": "Ayush",
       "email": "ayushrj2345@gmail.com",
-      "password": "$2b$10$eMyL9X3CIfsrpTuxbv2qDes.uErxEwDFlTOU/Hmfv7DkDfhSfrNKW",
+      "password": "$2b$10$TV8eyECU62HUiUDIg3JnJeXEQOaQsy8BLAXpz46swVVWEAy9F37KW",
       "role": "ADMIN",
       "createdAt": "2026-08-01T06:18:41.330Z"
     },
@@ -31,6 +31,38 @@
       "password": "$2b$10$bppdwx2l8H3fqRoowJJJvOqgmQicU/Ay0ahqMcmpnNvYaKKPjMvSO",
       "role": "CUSTOMER",
       "createdAt": "2026-08-01T06:49:10.576Z"
+    },
+    {
+      "id": "fb_1785583182726",
+      "name": "Test Customer",
+      "email": "testcustomer@example.com",
+      "password": "$2b$10$K2HDzqZ52kjXTMHkuaxEEu/LDX.L/U5jWoNZQSBEkRG66yxrmsGi6",
+      "role": "CUSTOMER",
+      "createdAt": "2026-08-01T11:19:42.727Z"
+    },
+    {
+      "id": "fb_1785583349955",
+      "name": "Ayush",
+      "email": "ayush@gmail.com",
+      "password": "$2b$10$TV8eyECU62HUiUDIg3JnJeXEQOaQsy8BLAXpz46swVVWEAy9F37KW",
+      "role": "ADMIN",
+      "createdAt": "2026-08-01T11:22:29.956Z"
+    },
+    {
+      "id": "fb_1785593739705",
+      "name": "Ben",
+      "email": "ben@gmail.com",
+      "password": "$2b$10$VXU1N1TC0oVuEVS9K1mOGOfX3PBGtZg4unPKiygVeVsU2A6kWL3YW",
+      "role": "CUSTOMER",
+      "createdAt": "2026-08-01T14:15:39.705Z"
+    },
+    {
+      "id": "fb_1785593934337",
+      "name": "Yash",
+      "email": "yash@gmail.com",
+      "password": "$2b$10$Y.MH7XoY045oLpp4K6a7Q.EskDrLbg5PQC0tNdUoQVYzbOJZZDtye",
+      "role": "AGENT",
+      "createdAt": "2026-08-01T14:18:54.337Z"
     }
   ],
   "customers": [
@@ -63,6 +95,26 @@
       "phone": "0000000000",
       "address": "Default Address",
       "createdAt": "2026-08-01T06:49:10.576Z"
+    },
+    {
+      "id": "cust_1785583182727",
+      "userId": "fb_1785583182726",
+      "name": "Test Customer",
+      "email": "testcustomer@example.com",
+      "dob": "1990-01-01T00:00:00.000Z",
+      "phone": "0000000000",
+      "address": "Default Address",
+      "createdAt": "2026-08-01T11:19:42.727Z"
+    },
+    {
+      "id": "cust_1785593739705",
+      "userId": "fb_1785593739705",
+      "name": "Ben",
+      "email": "ben@gmail.com",
+      "dob": "1990-01-01T00:00:00.000Z",
+      "phone": "0000000000",
+      "address": "Default Address",
+      "createdAt": "2026-08-01T14:15:39.705Z"
     }
   ],
   "policies": [
@@ -87,6 +139,17 @@
       "endDate": "2027-08-01T00:00:00.000Z",
       "status": "PENDING",
       "createdAt": "2026-08-01T06:53:00.446Z"
+    },
+    {
+      "id": "fb_policy_1785593791180",
+      "customerId": "cust_1785593739705",
+      "policyType": "Travel",
+      "policyNumber": "PH-791177-736",
+      "premiumAmount": 120,
+      "startDate": "2026-08-03T00:00:00.000Z",
+      "endDate": "2026-08-30T00:00:00.000Z",
+      "status": "PENDING",
+      "createdAt": "2026-08-01T14:16:31.180Z"
     }
   ],
   "claims": [],
