@@ -22,6 +22,17 @@ app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // 3. Register API Routes
+console.log('--- ROUTE DEBBUGING LOGS ---');
+console.log('authRoutes:', typeof authRoutes, authRoutes ? 'exists' : 'null/undefined');
+console.log('policyRoutes:', typeof policyRoutes, policyRoutes ? 'exists' : 'null/undefined');
+console.log('documentRoutes:', typeof documentRoutes, documentRoutes ? 'exists' : 'null/undefined');
+console.log('claimRoutes:', typeof claimRoutes, claimRoutes ? 'exists' : 'null/undefined');
+console.log('paymentRoutes:', typeof paymentRoutes, paymentRoutes ? 'exists' : 'null/undefined');
+console.log('messageRoutes:', typeof messageRoutes, messageRoutes ? 'exists' : 'null/undefined');
+console.log('dashboardRoutes:', typeof dashboardRoutes, dashboardRoutes ? 'exists' : 'null/undefined');
+console.log('profileRoutes:', typeof profileRoutes, profileRoutes ? 'exists' : 'null/undefined');
+console.log('-----------------------------');
+
 app.use('/api/auth', authRoutes);
 app.use('/api/policies', policyRoutes);
 app.use('/api/documents', documentRoutes);
