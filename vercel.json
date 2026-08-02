@@ -19,6 +19,46 @@
             }
         },
         {
+            "source": "/login",
+            "destination": {
+                "type": "service",
+                "service": "frontend",
+                "path": "/index.html"
+            }
+        },
+        {
+            "source": "/login/(.*)",
+            "destination": {
+                "type": "service",
+                "service": "frontend",
+                "path": "/index.html"
+            }
+        },
+        {
+            "source": "/auth",
+            "destination": {
+                "type": "service",
+                "service": "frontend",
+                "path": "/index.html"
+            }
+        },
+        {
+            "source": "/dashboard",
+            "destination": {
+                "type": "service",
+                "service": "frontend",
+                "path": "/index.html"
+            }
+        },
+        {
+            "source": "/insurance-dashboard",
+            "destination": {
+                "type": "service",
+                "service": "frontend",
+                "path": "/index.html"
+            }
+        },
+        {
             "source": "/(.*)",
             "destination": {
                 "type": "service",
