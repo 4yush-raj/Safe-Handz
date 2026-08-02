@@ -1,10 +1,12 @@
-const prisma = require('./prismaClient');
+const prisma = require('../prismaClient');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const fs = require('fs');
 const path = require('path');
 
-const FALLBACK_PATH = path.join(__dirname, 'data', 'fallback.json');
+const FALLBACK_PATH = process.env.VERCEL
+  ? path.join('/tmp', 'fallback.json')
+  : path.join(__dirname, '..', 'data', 'fallback.json');
 
 function loadFallback() {
   try {

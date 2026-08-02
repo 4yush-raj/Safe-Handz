@@ -1,7 +1,9 @@
 const fs = require('fs');
 const path = require('path');
 
-const FALLBACK_PATH = path.join(__dirname, 'data', 'fallback.json');
+const FALLBACK_PATH = process.env.VERCEL
+  ? path.join('/tmp', 'fallback.json')
+  : path.join(__dirname, 'data', 'fallback.json');
 const DEFAULT_FALLBACK = {
   users: [],
   customers: [],

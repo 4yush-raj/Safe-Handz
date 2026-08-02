@@ -3,7 +3,9 @@ const path = require('path');
 const prisma = require('../prismaClient');
 const { randomUUID } = require('crypto');
 
-const messagesFile = path.join(__dirname, '..', 'messages.json');
+const messagesFile = process.env.VERCEL
+  ? path.join('/tmp', 'messages.json')
+  : path.join(__dirname, '..', 'messages.json');
 
 async function loadMessages() {
   try {
