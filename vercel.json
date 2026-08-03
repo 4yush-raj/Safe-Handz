@@ -1,9 +1,7 @@
 {
+  "buildCommand": "npm run build --prefix frontend",
+  "outputDirectory": "frontend/dist",
   "services": {
-    "frontend": {
-      "root": "frontend",
-      "framework": "vite"
-    },
     "backend": {
       "root": "backend",
       "framework": "express",
@@ -24,75 +22,8 @@
       }
     },
     {
-      "source": "/login/client",
-      "destination": {
-        "type": "service",
-        "service": "frontend",
-        "path": "/index.html"
-      }
-    },
-    {
-      "source": "/login/agent",
-      "destination": {
-        "type": "service",
-        "service": "frontend",
-        "path": "/index.html"
-      }
-    },
-    {
-      "source": "/login/admin",
-      "destination": {
-        "type": "service",
-        "service": "frontend",
-        "path": "/index.html"
-      }
-    },
-    {
-      "source": "/login/customer",
-      "destination": {
-        "type": "service",
-        "service": "frontend",
-        "path": "/index.html"
-      }
-    },
-    {
-      "source": "/login",
-      "destination": {
-        "type": "service",
-        "service": "frontend",
-        "path": "/index.html"
-      }
-    },
-    {
-      "source": "/dashboard",
-      "destination": {
-        "type": "service",
-        "service": "frontend",
-        "path": "/index.html"
-      }
-    },
-    {
-      "source": "/insurance-dashboard",
-      "destination": {
-        "type": "service",
-        "service": "frontend",
-        "path": "/index.html"
-      }
-    },
-    {
-      "source": "/auth",
-      "destination": {
-        "type": "service",
-        "service": "frontend",
-        "path": "/index.html"
-      }
-    },
-    {
       "source": "/((?!api(?:/|$)).*)",
-      "destination": {
-        "type": "service",
-        "service": "frontend"
-      }
+      "destination": "/index.html"
     }
   ]
 }
