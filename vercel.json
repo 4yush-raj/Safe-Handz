@@ -27,7 +27,7 @@
       "source": "/((?!api(?:/|$)).*)",
       "destination": {
         "service": "frontend",
-        "path": "index.html"
+        "path": "/index.html"
       }
     }
   ]
