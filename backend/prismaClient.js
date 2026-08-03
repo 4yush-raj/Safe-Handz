@@ -7,12 +7,12 @@ let prisma = null;
 
 if (connectionString) {
   try {
-    const parse = require('pg-connection-string').parse;
-    const config = parse(connectionString);
-    config.ssl = {
-      rejectUnauthorized: false
-    };
-    const pool = new Pool(config);
+    const pool = new Pool({
+      connectionString,
+      ssl: {
+        rejectUnauthorized: false
+      }
+    });
     const adapter = new PrismaPg(pool);
     prisma = new PrismaClient({ adapter });
     prisma.dbAvailable = false;
