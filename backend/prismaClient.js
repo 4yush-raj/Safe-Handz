@@ -7,8 +7,9 @@ let prisma = null;
 
 if (connectionString) {
   try {
+    const cleanConnectionString = connectionString.split('?')[0];
     const pool = new Pool({
-      connectionString,
+      connectionString: cleanConnectionString,
       ssl: {
         rejectUnauthorized: false
       }
