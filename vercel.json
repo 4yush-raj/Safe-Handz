@@ -27,28 +27,28 @@
       "source": "/login/:path*",
       "destination": {
         "service": "frontend",
-        "path": "/index.html"
+        "path": "/"
       }
     },
     {
       "source": "/dashboard/:path*",
       "destination": {
         "service": "frontend",
-        "path": "/index.html"
+        "path": "/"
       }
     },
     {
       "source": "/insurance-dashboard/:path*",
       "destination": {
         "service": "frontend",
-        "path": "/index.html"
+        "path": "/"
       }
     },
     {
       "source": "/auth/:path*",
       "destination": {
         "service": "frontend",
-        "path": "/index.html"
+        "path": "/"
       }
     },
     {
