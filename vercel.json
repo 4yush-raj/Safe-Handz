@@ -24,7 +24,35 @@
       }
     },
     {
-      "source": "/((?!api(?:/|$)).*)",
+      "source": "/login/:path*",
+      "destination": {
+        "service": "frontend",
+        "path": "/index.html"
+      }
+    },
+    {
+      "source": "/dashboard/:path*",
+      "destination": {
+        "service": "frontend",
+        "path": "/index.html"
+      }
+    },
+    {
+      "source": "/insurance-dashboard/:path*",
+      "destination": {
+        "service": "frontend",
+        "path": "/index.html"
+      }
+    },
+    {
+      "source": "/auth/:path*",
+      "destination": {
+        "service": "frontend",
+        "path": "/index.html"
+      }
+    },
+    {
+      "source": "/(.*)",
       "destination": {
         "service": "frontend"
       }
