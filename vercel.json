@@ -1,69 +1,33 @@
 {
-    "services": {
-        "frontend": {
-            "root": "frontend",
-            "framework": "vite"
-        },
-        "backend": {
-            "root": "backend",
-            "framework": "express",
-            "entrypoint": "server.js"
-        }
+  "services": {
+    "frontend": {
+      "root": "frontend",
+      "framework": "vite"
     },
-    "rewrites": [
-        {
-            "source": "/api(/.*)?",
-            "destination": {
-                "type": "service",
-                "service": "backend"
-            }
-        },
-        {
-            "source": "/login",
-            "destination": {
-                "type": "service",
-                "service": "frontend",
-                "path": "/index.html"
-            }
-        },
-        {
-            "source": "/login/(.*)",
-            "destination": {
-                "type": "service",
-                "service": "frontend",
-                "path": "/index.html"
-            }
-        },
-        {
-            "source": "/auth",
-            "destination": {
-                "type": "service",
-                "service": "frontend",
-                "path": "/index.html"
-            }
-        },
-        {
-            "source": "/dashboard",
-            "destination": {
-                "type": "service",
-                "service": "frontend",
-                "path": "/index.html"
-            }
-        },
-        {
-            "source": "/insurance-dashboard",
-            "destination": {
-                "type": "service",
-                "service": "frontend",
-                "path": "/index.html"
-            }
-        },
-        {
-            "source": "/(.*)",
-            "destination": {
-                "type": "service",
-                "service": "frontend"
-            }
-        }
-    ]
+    "backend": {
+      "root": "backend",
+      "framework": "express",
+      "entrypoint": "server.js"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": {
+        "service": "backend"
+      }
+    },
+    {
+      "source": "/api",
+      "destination": {
+        "service": "backend"
+      }
+    },
+    {
+      "source": "/(.*)",
+      "destination": {
+        "service": "frontend"
+      }
+    }
+  ]
 }
