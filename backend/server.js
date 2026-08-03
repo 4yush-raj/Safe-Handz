@@ -18,6 +18,15 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Database Connection Middleware for Serverless Environment
+const prisma = require('./prismaClient');
+app.use(async (req, res, next) => {
+  if (prisma && typeof prisma.checkConnection === 'function') {
+    await prisma.checkConnection();
+  }
+  next();
+});
+
 // 2. Serve static uploaded files (Accessible via http://localhost:5000/uploads/filename)
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 

@@ -17,6 +17,20 @@ if (connectionString) {
     prisma = new PrismaClient({ adapter });
     prisma.dbAvailable = false;
 
+    prisma.checkConnection = async function() {
+      if (this.dbAvailable) return true;
+      try {
+        await this.$queryRaw`SELECT 1`;
+        this.dbAvailable = true;
+        console.log('Prisma database connection established.');
+        return true;
+      } catch (err) {
+        this.dbAvailable = false;
+        console.warn('Prisma database connection check failed:', err.message);
+        return false;
+      }
+    };
+
     prisma.$connect()
       .then(() => prisma.$queryRaw`SELECT 1`)
       .then(() => {
