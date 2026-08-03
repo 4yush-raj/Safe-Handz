@@ -1,6 +1,9 @@
 {
   "name": "safe-handz-monorepo",
   "version": "1.0.0",
+  "workspaces": [
+    "frontend"
+  ],
   "scripts": {
     "build": "npm run build --prefix frontend && prisma generate --schema=backend/prisma/schema.prisma",
     "start": "node server.js"
